@@ -987,9 +987,9 @@ const FlashcardApp = () => {
             const diff = swipeStartX - swipeEndX;
             if (Math.abs(diff) > 50) {
                 if (diff > 0) {
-                    handleNext(); // Swipe left
+                    triggerCardChange('next'); // Swipe left
                 } else {
-                    handlePrevious(); // Swipe right
+                    triggerCardChange('prev'); // Swipe right
                 }
             }
         }
