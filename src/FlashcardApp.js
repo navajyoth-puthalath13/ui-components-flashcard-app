@@ -906,8 +906,8 @@ const FlashcardApp = () => {
                 setTimeout(() => {
                     setAnimating(false);
                     setSlideDirection('');
-                }, 100);
-            }, 200);
+                }, 50);
+            }, 400);
         }
     };
 
@@ -925,8 +925,8 @@ const FlashcardApp = () => {
                 setTimeout(() => {
                     setAnimating(false);
                     setSlideDirection('');
-                }, 100);
-            }, 200);
+                }, 50);
+            }, 400);
         }
     };
 
@@ -1010,34 +1010,38 @@ const FlashcardApp = () => {
             {/* Main Flashcard */}
             <div className="w-full max-w-2xl px-4 md:px-8 mt-16 md:mt-0">
                 <div className="relative" style={{ perspective: '1000px' }}>
-                    <div
-                        className={`relative w-full h-96 transition-all duration-500 ease-in-out transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''
-                            } ${getCardAnimation()}`}
-                        onClick={handleFlip}
-                        style={{ transformStyle: 'preserve-3d' }}
-                    >
-                        {/* Front of card */}
+                    {/* Single Card Container */}
+                    <div className="relative w-full h-96">
                         <div
-                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
-                            style={{ backfaceVisibility: 'hidden' }}
+                            className={`relative w-full h-96 transition-all duration-500 ease-in-out transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''
+                                } ${animating ? getCardAnimation() : ''
+                                }`}
+                            style={{ transformStyle: 'preserve-3d' }}
+                            onClick={handleFlip}
                         >
-                            <div className="text-center flex-1 flex flex-col items-center justify-center">
-                                {currentCard?.icon && <div className="mb-4">{currentCard.icon}</div>}
-                                <h2 className="text-4xl font-medium text-gray-800">{currentCard?.front}</h2>
+                            {/* Front of card */}
+                            <div
+                                className="absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
+                                style={{ backfaceVisibility: 'hidden' }}
+                            >
+                                <div className="text-center flex-1 flex flex-col items-center justify-center">
+                                    {currentCard?.icon && <div className="mb-4">{currentCard.icon}</div>}
+                                    <h2 className="text-4xl font-medium text-gray-800">{currentCard?.front}</h2>
+                                </div>
+                                <p className="text-gray-500 mt-auto">Use ↑↓ arrows or click to flip</p>
                             </div>
-                            <p className="text-gray-500 mt-auto">Use ↑↓ arrows or click to flip</p>
-                        </div>
 
-                        {/* Back of card */}
-                        <div
-                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex items-center justify-center p-8 rotate-x-180 backface-hidden"
-                            style={{
-                                backfaceVisibility: 'hidden',
-                                transform: 'rotateX(180deg)'
-                            }}
-                        >
-                            <div className="text-center">
-                                <p className="text-xl text-gray-700 leading-relaxed">{currentCard?.back}</p>
+                            {/* Back of card */}
+                            <div
+                                className="absolute inset-0 bg-white rounded-3xl shadow-xl flex items-center justify-center p-8 rotate-x-180 backface-hidden"
+                                style={{
+                                    backfaceVisibility: 'hidden',
+                                    transform: 'rotateX(180deg)'
+                                }}
+                            >
+                                <div className="text-center">
+                                    <p className="text-xl text-gray-700 leading-relaxed">{currentCard?.back}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1109,90 +1113,45 @@ const FlashcardApp = () => {
           transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        /* Card slide animations */
+        /* Simple and minimal card animations */
         .card-slide-next {
-          animation: cardSlideNext 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: cardSlideNext 0.4s ease-out;
         }
         .card-slide-prev {
-          animation: cardSlidePrev 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: cardSlidePrev 0.4s ease-out;
         }
         
         @keyframes cardSlideNext {
           0% {
-            transform: translateX(0) rotateY(0deg) rotateX(0deg) scale(1);
+            transform: translateX(0) scale(1);
             opacity: 1;
           }
-          25% {
-            transform: translateX(-20px) rotateY(-15deg) rotateX(5deg) scale(0.98);
-            opacity: 0.9;
-          }
           50% {
-            transform: translateX(-40px) rotateY(-30deg) rotateX(10deg) scale(0.95);
-            opacity: 0.7;
-          }
-          75% {
-            transform: translateX(-60px) rotateY(-45deg) rotateX(15deg) scale(0.9);
-            opacity: 0.4;
+            transform: translateX(-20px) scale(0.95);
+            opacity: 0.5;
           }
           100% {
-            transform: translateX(-80px) rotateY(-60deg) rotateX(20deg) scale(0.85);
+            transform: translateX(-40px) scale(0.9);
             opacity: 0;
           }
         }
         
         @keyframes cardSlidePrev {
           0% {
-            transform: translateX(0) rotateY(0deg) rotateX(0deg) scale(1);
+            transform: translateX(0) scale(1);
             opacity: 1;
           }
-          25% {
-            transform: translateX(20px) rotateY(15deg) rotateX(5deg) scale(0.98);
-            opacity: 0.9;
-          }
           50% {
-            transform: translateX(40px) rotateY(30deg) rotateX(10deg) scale(0.95);
-            opacity: 0.7;
-          }
-          75% {
-            transform: translateX(60px) rotateY(45deg) rotateX(15deg) scale(0.9);
-            opacity: 0.4;
+            transform: translateX(20px) scale(0.95);
+            opacity: 0.5;
           }
           100% {
-            transform: translateX(80px) rotateY(60deg) rotateX(20deg) scale(0.85);
+            transform: translateX(40px) scale(0.9);
             opacity: 0;
           }
         }
         
-        /* Legacy slide animations (keeping for compatibility) */
-        .slide-out-left {
-          animation: slideOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .slide-out-right {
-          animation: slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes slideOutLeft {
-          0% {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(-100px) scale(0.8);
-            opacity: 0;
-          }
-        }
-        @keyframes slideOutRight {
-          0% {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100px) scale(0.8);
-            opacity: 0;
-          }
-        }
-        .clip-path-star {
-          clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-        }
+
       `}</style>
         </div>
     );

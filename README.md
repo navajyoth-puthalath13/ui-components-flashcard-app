@@ -1,4 +1,4 @@
-# Flashcard UI Components App
+# Learnmate - UI Components Flashcard App
 
 A modern React app that helps you learn and explore UI component patterns through interactive flashcards. Perfect for designers, developers, and anyone interested in UI/UX best practices.
 
@@ -27,8 +27,8 @@ A modern React app that helps you learn and explore UI component patterns throug
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/REPO_NAME.git
-   cd REPO_NAME
+   git clone https://github.com/YOUR_USERNAME/learnmate.git
+   cd learnmate
    ```
 2. **Install dependencies:**
    ```bash
