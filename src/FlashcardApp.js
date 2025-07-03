@@ -7,12 +7,13 @@ import {
     Grid3X3,
     Home,
     ChevronDown,
-    MousePointer,
-    Layout,
-    Palette,
-    MessageSquare,
-    Eye,
-    Settings
+    Settings,
+    LayoutGrid,
+    MousePointerClick,
+    BarChart2,
+    Puzzle,
+    MessageSquareText,
+    Accessibility
 } from 'lucide-react';
 
 const FlashcardApp = () => {
@@ -22,12 +23,16 @@ const FlashcardApp = () => {
     const [animating, setAnimating] = useState(false);
     const [slideDirection, setSlideDirection] = useState('');
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [swipeStartX, setSwipeStartX] = useState(null);
+    const [swipeEndX, setSwipeEndX] = useState(null);
+    const [cardState, setCardState] = useState('idle');
+    const [pendingDirection, setPendingDirection] = useState(null);
 
     // All flashcard categories
     const categories = {
         'ui-components': {
-            name: 'UI Components',
-            icon: <Menu size={20} />,
+            name: 'Core UI',
+            icon: <LayoutGrid size={20} />,
             description: 'Common interface patterns and their food-inspired names',
             cards: [
                 {
@@ -121,8 +126,8 @@ const FlashcardApp = () => {
             ]
         },
         'buttons': {
-            name: 'Action & Button Components',
-            icon: <MousePointer size={20} />,
+            name: 'Actions',
+            icon: <MousePointerClick size={20} />,
             description: 'Interactive elements and call-to-action patterns',
             cards: [
                 {
@@ -289,8 +294,8 @@ const FlashcardApp = () => {
             ]
         },
         'display': {
-            name: 'Display & Data Components',
-            icon: <Layout size={20} />,
+            name: 'Display',
+            icon: <BarChart2 size={20} />,
             description: 'Information presentation and data visualization',
             cards: [
                 {
@@ -462,8 +467,8 @@ const FlashcardApp = () => {
             ]
         },
         'specialty': {
-            name: 'Specialty & Advanced Components',
-            icon: <Palette size={20} />,
+            name: 'Advanced',
+            icon: <Puzzle size={20} />,
             description: 'Advanced interactive features and specialized functionality',
             cards: [
                 {
@@ -620,8 +625,8 @@ const FlashcardApp = () => {
             ]
         },
         'social': {
-            name: 'Social & Interactive Elements',
-            icon: <MessageSquare size={20} />,
+            name: 'Social',
+            icon: <MessageSquareText size={20} />,
             description: 'Social features and interactive communication elements',
             cards: [
                 {
@@ -710,8 +715,8 @@ const FlashcardApp = () => {
             ]
         },
         'accessibility': {
-            name: 'Accessibility & Assistive Components',
-            icon: <Eye size={20} />,
+            name: 'Accessibility',
+            icon: <Accessibility size={20} />,
             description: 'Components for inclusive design and assistive technology',
             cards: [
                 {
@@ -787,7 +792,7 @@ const FlashcardApp = () => {
             ]
         },
         'utility': {
-            name: 'Utility & Miscellaneous Components',
+            name: 'Utilities',
             icon: <Settings size={20} />,
             description: 'Helper components and utility features',
             cards: [
@@ -965,10 +970,65 @@ const FlashcardApp = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showCategoryDropdown]);
 
+    const handleTouchStart = (e) => {
+        if (e.touches && e.touches.length === 1) {
+            setSwipeStartX(e.touches[0].clientX);
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches && e.touches.length === 1) {
+            setSwipeEndX(e.touches[0].clientX);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (swipeStartX !== null && swipeEndX !== null) {
+            const diff = swipeStartX - swipeEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    handleNext(); // Swipe left
+                } else {
+                    handlePrevious(); // Swipe right
+                }
+            }
+        }
+        setSwipeStartX(null);
+        setSwipeEndX(null);
+    };
+
+    const triggerCardChange = (direction) => {
+        if (cardState === 'idle') {
+            setCardState('out');
+            setPendingDirection(direction);
+        }
+    };
+
+    useEffect(() => {
+        if (cardState === 'out' && pendingDirection) {
+            const timeout = setTimeout(() => {
+                if (pendingDirection === 'next') {
+                    setCurrentIndex((prev) => (prev < currentCards.length - 1 ? prev + 1 : 0));
+                } else if (pendingDirection === 'prev') {
+                    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : currentCards.length - 1));
+                }
+                setCardState('in');
+            }, 350); // match animation duration
+            return () => clearTimeout(timeout);
+        } else if (cardState === 'in') {
+            const timeout = setTimeout(() => {
+                setCardState('idle');
+                setPendingDirection(null);
+            }, 350);
+            return () => clearTimeout(timeout);
+        }
+    }, [cardState, pendingDirection, currentCards.length]);
+
     const getCardAnimation = () => {
-        if (!animating) return '';
-        if (slideDirection === 'next') return 'card-slide-next';
-        if (slideDirection === 'prev') return 'card-slide-prev';
+        if (cardState === 'out' && pendingDirection === 'next') return 'card-bubble-out-left';
+        if (cardState === 'out' && pendingDirection === 'prev') return 'card-bubble-out-right';
+        if (cardState === 'in' && pendingDirection === 'next') return 'card-bubble-in-right';
+        if (cardState === 'in' && pendingDirection === 'prev') return 'card-bubble-in-left';
         return '';
     };
 
@@ -999,7 +1059,9 @@ const FlashcardApp = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="font-medium text-sm md:text-base truncate">{category.name}</div>
-                                    <div className="text-xs md:text-sm text-gray-500 truncate">{category.cards.length} cards • {category.description}</div>
+                                    <div className="text-xs md:text-sm text-gray-500 truncate">
+                                        {category.cards.length === 1 ? '1 card available' : `${category.cards.length} cards available`}
+                                    </div>
                                 </div>
                             </button>
                         ))}
@@ -1011,37 +1073,36 @@ const FlashcardApp = () => {
             <div className="w-full max-w-2xl px-4 md:px-8 mt-16 md:mt-0">
                 <div className="relative" style={{ perspective: '1000px' }}>
                     {/* Single Card Container */}
-                    <div className="relative w-full h-96">
+                    <div
+                        className={`relative w-full h-96 ${cardState === 'idle' ? 'transition-all duration-500 ease-in-out' : ''} transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''} ${getCardAnimation()}`}
+                        style={{ transformStyle: 'preserve-3d' }}
+                        onClick={handleFlip}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                    >
+                        {/* Front of card */}
                         <div
-                            className={`relative w-full h-96 transition-all duration-500 ease-in-out transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''
-                                } ${animating ? getCardAnimation() : ''
-                                }`}
-                            style={{ transformStyle: 'preserve-3d' }}
-                            onClick={handleFlip}
+                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
+                            style={{ backfaceVisibility: 'hidden' }}
                         >
-                            {/* Front of card */}
-                            <div
-                                className="absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
-                                style={{ backfaceVisibility: 'hidden' }}
-                            >
-                                <div className="text-center flex-1 flex flex-col items-center justify-center">
-                                    {currentCard?.icon && <div className="mb-4">{currentCard.icon}</div>}
-                                    <h2 className="text-4xl font-medium text-gray-800">{currentCard?.front}</h2>
-                                </div>
-                                <p className="text-gray-500 mt-auto">Use ↑↓ arrows or click to flip</p>
+                            <div className="text-center flex-1 flex flex-col items-center justify-center">
+                                {currentCard?.icon && <div className="mb-4">{currentCard.icon}</div>}
+                                <h2 className="text-4xl font-medium text-gray-800">{currentCard?.front}</h2>
                             </div>
+                            <p className="text-gray-500 mt-auto">Use ↑↓ arrows or click to flip</p>
+                        </div>
 
-                            {/* Back of card */}
-                            <div
-                                className="absolute inset-0 bg-white rounded-3xl shadow-xl flex items-center justify-center p-8 rotate-x-180 backface-hidden"
-                                style={{
-                                    backfaceVisibility: 'hidden',
-                                    transform: 'rotateX(180deg)'
-                                }}
-                            >
-                                <div className="text-center">
-                                    <p className="text-xl text-gray-700 leading-relaxed">{currentCard?.back}</p>
-                                </div>
+                        {/* Back of card */}
+                        <div
+                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex items-center justify-center p-8 rotate-x-180 backface-hidden"
+                            style={{
+                                backfaceVisibility: 'hidden',
+                                transform: 'rotateX(180deg)'
+                            }}
+                        >
+                            <div className="text-center">
+                                <p className="text-xl text-gray-700 leading-relaxed">{currentCard?.back}</p>
                             </div>
                         </div>
                     </div>
@@ -1050,14 +1111,14 @@ const FlashcardApp = () => {
                 {/* Navigation Controls */}
                 <div className="flex items-center justify-center mt-8 space-x-8">
                     <button
-                        onClick={handlePrevious}
+                        onClick={() => triggerCardChange('prev')}
                         className="p-3 rounded-full transition-all bg-white/20 text-white hover:bg-white/30"
                     >
                         <ChevronLeft size={24} />
                     </button>
 
                     <button
-                        onClick={handleNext}
+                        onClick={() => triggerCardChange('next')}
                         className="p-3 rounded-full transition-all bg-white/20 text-white hover:bg-white/30"
                     >
                         <ChevronRight size={24} />
@@ -1107,54 +1168,42 @@ const FlashcardApp = () => {
         .transform-style-preserve-3d {
           transform-style: preserve-3d;
         }
-        
         /* Smooth flip animation */
         .transition-all {
-          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        
-        /* Simple and minimal card animations */
-        .card-slide-next {
-          animation: cardSlideNext 0.4s ease-out;
+        /* Bubble-like card slide animations */
+        .card-bubble-out-left {
+          animation: cardBubbleOutLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        .card-slide-prev {
-          animation: cardSlidePrev 0.4s ease-out;
+        .card-bubble-out-right {
+          animation: cardBubbleOutRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        
-        @keyframes cardSlideNext {
-          0% {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: translateX(-20px) scale(0.95);
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateX(-40px) scale(0.9);
-            opacity: 0;
-          }
+        .card-bubble-in-right {
+          animation: cardBubbleInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        
-        @keyframes cardSlidePrev {
-          0% {
-            transform: translateX(0) scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: translateX(20px) scale(0.95);
-            opacity: 0.5;
-          }
-          100% {
-            transform: translateX(40px) scale(0.9);
-            opacity: 0;
-          }
+        .card-bubble-in-left {
+          animation: cardBubbleInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
-        
-
+        @keyframes cardBubbleOutLeft {
+          0% { transform: scale(1) translateX(0); opacity: 1; }
+          100% { transform: scale(0.9) translateX(-80px); opacity: 0; }
+        }
+        @keyframes cardBubbleOutRight {
+          0% { transform: scale(1) translateX(0); opacity: 1; }
+          100% { transform: scale(0.9) translateX(80px); opacity: 0; }
+        }
+        @keyframes cardBubbleInRight {
+          0% { transform: scale(0.9) translateX(80px); opacity: 0; }
+          100% { transform: scale(1) translateX(0); opacity: 1; }
+        }
+        @keyframes cardBubbleInLeft {
+          0% { transform: scale(0.9) translateX(-80px); opacity: 0; }
+          100% { transform: scale(1) translateX(0); opacity: 1; }
+        }
       `}</style>
         </div>
     );
 };
 
-export default FlashcardApp; 
+export default FlashcardApp;
