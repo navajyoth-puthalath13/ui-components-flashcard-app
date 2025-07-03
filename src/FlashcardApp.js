@@ -27,6 +27,7 @@ const FlashcardApp = () => {
     const [swipeEndX, setSwipeEndX] = useState(null);
     const [cardState, setCardState] = useState('idle');
     const [pendingDirection, setPendingDirection] = useState(null);
+    const [achievement, setAchievement] = useState(null);
 
     // All flashcard categories
     const categories = {
@@ -943,8 +944,8 @@ const FlashcardApp = () => {
     };
 
     const handleKeyPress = useCallback((e) => {
-        if (e.key === 'ArrowLeft') handlePrevious();
-        if (e.key === 'ArrowRight') handleNext();
+        if (e.key === 'ArrowLeft') triggerCardChange('prev');
+        if (e.key === 'ArrowRight') triggerCardChange('next');
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
             handleFlip();
@@ -952,12 +953,12 @@ const FlashcardApp = () => {
         if (e.key === 'Escape') {
             setShowCategoryDropdown(false);
         }
-    }, [currentIndex, currentCards.length, flipped, animating]);
+    }, [currentIndex, currentCards.length, flipped, cardState]);
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [currentIndex, currentCards.length, flipped, animating]);
+    }, [currentIndex, currentCards.length, flipped, cardState]);
 
     // Click outside handler for dropdown
     useEffect(() => {
@@ -997,8 +998,49 @@ const FlashcardApp = () => {
         setSwipeEndX(null);
     };
 
+    const categoryKeys = Object.keys(categories);
+
+    const showAchievement = (message) => {
+        setAchievement(message);
+        setTimeout(() => setAchievement(null), 2000);
+    };
+
     const triggerCardChange = (direction) => {
         if (cardState === 'idle') {
+            // If at last card and going next
+            if (
+                direction === 'next' &&
+                currentIndex === currentCards.length - 1
+            ) {
+                const currentCategoryIdx = categoryKeys.indexOf(currentCategory);
+                if (currentCategoryIdx < categoryKeys.length - 1) {
+                    const nextCategoryKey = categoryKeys[currentCategoryIdx + 1];
+                    showAchievement(`Nice work! You finished "${categories[currentCategory].name}".`);
+                    setTimeout(() => {
+                        setCurrentCategory(nextCategoryKey);
+                        setCurrentIndex(0);
+                        setFlipped(false);
+                    }, 1200);
+                    return;
+                } else {
+                    showAchievement("You've explored every category. Well done!");
+                    return;
+                }
+            }
+            // If at first card and going prev, go to previous category's last card
+            if (
+                direction === 'prev' &&
+                currentIndex === 0
+            ) {
+                const currentCategoryIdx = categoryKeys.indexOf(currentCategory);
+                if (currentCategoryIdx > 0) {
+                    const prevCategoryKey = categoryKeys[currentCategoryIdx - 1];
+                    setCurrentCategory(prevCategoryKey);
+                    setCurrentIndex(categories[prevCategoryKey].cards.length - 1);
+                    setFlipped(false);
+                    return;
+                }
+            }
             setCardState('out');
             setPendingDirection(direction);
         }
@@ -1033,7 +1075,7 @@ const FlashcardApp = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center relative" style={{ backgroundColor: '#6A9BCC' }}>
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#6A9BCC' }}>
             {/* Category Selector */}
             <div className="absolute top-4 right-4 md:top-6 md:right-6 category-dropdown z-20">
                 <button
@@ -1071,7 +1113,7 @@ const FlashcardApp = () => {
 
             {/* Main Flashcard */}
             <div className="w-full max-w-2xl px-4 md:px-8 mt-16 md:mt-0">
-                <div className="relative" style={{ perspective: '1000px' }}>
+                <div className="relative w-full h-96 max-h-[80vh] flex items-center justify-center mx-auto" style={{ perspective: '1000px' }}>
                     {/* Single Card Container */}
                     <div
                         className={`relative w-full h-96 ${cardState === 'idle' ? 'transition-all duration-500 ease-in-out' : ''} transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''} ${getCardAnimation()}`}
@@ -1156,6 +1198,14 @@ const FlashcardApp = () => {
                 </div>
             </div>
 
+            {/* Achievement Modal/Toast */}
+            {achievement && (
+                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 px-5 py-3 rounded-2xl shadow-lg z-50 text-base font-medium animate-achieve-pop min-w-[200px] text-center flex items-center justify-center gap-2 border border-green-200">
+                    <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    <span>{achievement}</span>
+                </div>
+            )}
+
             {/* Custom CSS for animations */}
             <style jsx>{`
         .rotate-x-180 {
@@ -1174,16 +1224,16 @@ const FlashcardApp = () => {
         }
         /* Bubble-like card slide animations */
         .card-bubble-out-left {
-          animation: cardBubbleOutLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: cardBubbleOutLeft 0.5s cubic-bezier(0.33, 1, 0.68, 1) forwards;
         }
         .card-bubble-out-right {
-          animation: cardBubbleOutRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: cardBubbleOutRight 0.5s cubic-bezier(0.33, 1, 0.68, 1) forwards;
         }
         .card-bubble-in-right {
-          animation: cardBubbleInRight 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: cardBubbleInRight 0.5s cubic-bezier(0.33, 1, 0.68, 1) forwards;
         }
         .card-bubble-in-left {
-          animation: cardBubbleInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: cardBubbleInLeft 0.5s cubic-bezier(0.33, 1, 0.68, 1) forwards;
         }
         @keyframes cardBubbleOutLeft {
           0% { transform: scale(1) translateX(0); opacity: 1; }
@@ -1200,6 +1250,13 @@ const FlashcardApp = () => {
         @keyframes cardBubbleInLeft {
           0% { transform: scale(0.9) translateX(-80px); opacity: 0; }
           100% { transform: scale(1) translateX(0); opacity: 1; }
+        }
+        .animate-achieve-pop {
+          animation: achievePopIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes achievePopIn {
+          0% { opacity: 0; transform: translateY(40px) scale(0.95) translateX(-50%); }
+          100% { opacity: 1; transform: translateY(0) scale(1) translateX(-50%); }
         }
       `}</style>
         </div>
