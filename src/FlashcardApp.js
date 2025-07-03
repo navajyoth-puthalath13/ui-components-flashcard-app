@@ -1200,9 +1200,10 @@ const FlashcardApp = () => {
 
             {/* Achievement Modal/Toast */}
             {achievement && (
-                <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 px-5 py-3 rounded-2xl shadow-lg z-50 text-base font-medium animate-achieve-pop min-w-[200px] text-center flex items-center justify-center gap-2 border border-green-200">
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white text-gray-900 px-4 py-2 rounded-xl shadow-lg z-50 text-base font-medium animate-achieve-pop w-auto max-w-xs min-w-[120px] text-center flex items-center justify-center gap-2 border border-green-200"
+                    style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.12)' }}>
                     <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    <span>{achievement}</span>
+                    <span className="truncate text-sm sm:text-base leading-tight">{achievement}</span>
                 </div>
             )}
 
