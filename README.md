@@ -85,4 +85,11 @@ Contributions, issues, and feature requests are welcome!
 
 ---
 
+## 📝 Version History
+
+- **v1.1.0** (Current)
+  - Updated Open Graph and Twitter meta tags to use `wicon.png` for improved social sharing previews (WhatsApp, Facebook, Twitter, etc.)
+- **v1.0.0**
+  - Initial release
+
 > _Made with ❤️ for the UI/UX community._
