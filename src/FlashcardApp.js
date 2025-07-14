@@ -15,6 +15,9 @@ import {
     MessageSquareText,
     Accessibility
 } from 'lucide-react';
+// Remove Carousel import
+// import Carousel from 'react-spring-3d-carousel';
+// import { config } from 'react-spring';
 
 const FlashcardApp = () => {
     const [currentCategory, setCurrentCategory] = useState('ui-components');
@@ -23,8 +26,9 @@ const FlashcardApp = () => {
     const [animating, setAnimating] = useState(false);
     const [slideDirection, setSlideDirection] = useState('');
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    // Swipe state for multi-card swipe
     const [swipeStartX, setSwipeStartX] = useState(null);
-    const [swipeEndX, setSwipeEndX] = useState(null);
+    const [swipeDelta, setSwipeDelta] = useState(0);
     const [cardState, setCardState] = useState('idle');
     const [pendingDirection, setPendingDirection] = useState(null);
     const [achievement, setAchievement] = useState(null);
@@ -971,33 +975,6 @@ const FlashcardApp = () => {
         return () => document.removeEventListener('click', handleClickOutside);
     }, [showCategoryDropdown]);
 
-    const handleTouchStart = (e) => {
-        if (e.touches && e.touches.length === 1) {
-            setSwipeStartX(e.touches[0].clientX);
-        }
-    };
-
-    const handleTouchMove = (e) => {
-        if (e.touches && e.touches.length === 1) {
-            setSwipeEndX(e.touches[0].clientX);
-        }
-    };
-
-    const handleTouchEnd = () => {
-        if (swipeStartX !== null && swipeEndX !== null) {
-            const diff = swipeStartX - swipeEndX;
-            if (Math.abs(diff) > 50) {
-                if (diff > 0) {
-                    triggerCardChange('next'); // Swipe left
-                } else {
-                    triggerCardChange('prev'); // Swipe right
-                }
-            }
-        }
-        setSwipeStartX(null);
-        setSwipeEndX(null);
-    };
-
     const categoryKeys = Object.keys(categories);
 
     const showAchievement = (message) => {
@@ -1074,6 +1051,62 @@ const FlashcardApp = () => {
         return '';
     };
 
+    // Custom stacked carousel rendering
+    const getCardPosition = (idx) => {
+        const total = currentCards.length;
+        if (idx === currentIndex) return { zIndex: 5, transform: 'translateX(0) scale(1)', opacity: 1 };
+        if (idx === (currentIndex - 1 + total) % total) return { zIndex: 4, transform: 'translateX(-90px) scale(0.92)', opacity: 1 };
+        if (idx === (currentIndex + 1) % total) return { zIndex: 4, transform: 'translateX(90px) scale(0.92)', opacity: 1 };
+        if (idx === (currentIndex - 2 + total) % total) return { zIndex: 3, transform: 'translateX(-180px) scale(0.85)', opacity: 1 };
+        if (idx === (currentIndex + 2) % total) return { zIndex: 3, transform: 'translateX(180px) scale(0.85)', opacity: 1 };
+        // Hide all other cards
+        return { zIndex: 1, transform: 'translateX(0) scale(0.8)', opacity: 0 };
+    };
+
+    // Touch/swipe support
+    const handleTouchStart = (e) => {
+        if (e.touches && e.touches.length === 1) {
+            setSwipeStartX(e.touches[0].clientX);
+            setSwipeDelta(0);
+        }
+    };
+    const handleTouchMove = (e) => {
+        if (e.touches && e.touches.length === 1 && swipeStartX !== null) {
+            setSwipeDelta(e.touches[0].clientX - swipeStartX);
+        }
+    };
+    const handleTouchEnd = () => {
+        if (swipeStartX !== null) {
+            // Threshold for swipe: 40px per card
+            const threshold = 40;
+            let cardsToMove = 0;
+            if (Math.abs(swipeDelta) > threshold) {
+                cardsToMove = Math.round(swipeDelta / threshold);
+            }
+            if (cardsToMove < 0) {
+                // Swipe left, go to next card(s)
+                setCurrentIndex((prev) => (prev + Math.abs(cardsToMove)) % currentCards.length);
+            } else if (cardsToMove > 0) {
+                // Swipe right, go to prev card(s)
+                setCurrentIndex((prev) => (prev - cardsToMove + currentCards.length) % currentCards.length);
+            }
+        }
+        setSwipeStartX(null);
+        setSwipeDelta(0);
+    };
+
+    // Space bar to flip
+    useEffect(() => {
+        const handleSpaceFlip = (e) => {
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault();
+                handleFlip();
+            }
+        };
+        window.addEventListener('keydown', handleSpaceFlip);
+        return () => window.removeEventListener('keydown', handleSpaceFlip);
+    }, [handleFlip]);
+
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#6A9BCC' }}>
             {/* Category Selector */}
@@ -1111,45 +1144,85 @@ const FlashcardApp = () => {
                 )}
             </div>
 
-            {/* Main Flashcard */}
+            {/* Main Flashcard Custom Carousel */}
             <div className="w-full max-w-2xl px-4 md:px-8 mt-16 md:mt-0">
-                <div className="relative w-full h-96 max-h-[80vh] flex items-center justify-center mx-auto" style={{ perspective: '1000px' }}>
-                    {/* Single Card Container */}
-                    <div
-                        className={`relative w-full h-96 ${cardState === 'idle' ? 'transition-all duration-500 ease-in-out' : ''} transform-style-preserve-3d cursor-pointer ${flipped ? 'rotate-x-180' : ''} ${getCardAnimation()}`}
-                        style={{ transformStyle: 'preserve-3d' }}
-                        onClick={handleFlip}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={handleTouchEnd}
-                    >
-                        {/* Front of card */}
-                        <div
-                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 backface-hidden"
-                            style={{ backfaceVisibility: 'hidden' }}
-                        >
-                            <div className="text-center flex-1 flex flex-col items-center justify-center">
-                                {currentCard?.icon && <div className="mb-4">{currentCard.icon}</div>}
-                                <h2 className="text-4xl font-medium text-gray-800">{currentCard?.front}</h2>
+                <div className="relative w-full h-96 max-h-[80vh] flex items-center justify-center mx-auto" style={{ perspective: '1200px' }}>
+                    {currentCards.map((card, idx) => {
+                        const isCenter = idx === currentIndex;
+                        const style = {
+                            position: 'absolute',
+                            top: 0,
+                            left: '50%',
+                            width: '320px',
+                            height: '384px',
+                            marginLeft: '-160px',
+                            transition: 'transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s cubic-bezier(0.22,1,0.36,1)',
+                            ...getCardPosition(idx),
+                            boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)',
+                            background: 'white',
+                            borderRadius: '1.5rem',
+                            display: getCardPosition(idx).opacity === 0 ? 'none' : 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '2rem',
+                            cursor: isCenter ? 'pointer' : 'default',
+                            userSelect: 'none',
+                            perspective: '1000px',
+                        };
+                        return (
+                            <div
+                                key={idx}
+                                style={style}
+                                onClick={isCenter ? handleFlip : undefined}
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                            >
+                                <div
+                                    className={isCenter ? `relative w-full h-full transition-transform duration-700 ease-flip ${flipped ? 'flip-180' : ''}` : 'w-full h-full'}
+                                    style={{
+                                        transformStyle: 'preserve-3d',
+                                        width: '100%',
+                                        height: '100%',
+                                    }}
+                                >
+                                    {/* Front of card */}
+                                    <div
+                                        className="absolute inset-0 flex flex-col items-center justify-center backface-hidden"
+                                        style={{
+                                            backfaceVisibility: 'hidden',
+                                            width: '100%',
+                                            height: '100%',
+                                        }}
+                                    >
+                                        <div className="text-center flex-1 flex flex-col items-center justify-center">
+                                            {card.icon && <div className="mb-4">{card.icon}</div>}
+                                            <h2 className="text-4xl font-medium text-gray-800">{card.front}</h2>
+                                        </div>
+                                        <p className="text-gray-500 mt-auto opacity-60">Tap, click, or press Space to flip</p>
+                                    </div>
+                                    {/* Back of card (only for center card) */}
+                                    {isCenter && (
+                                        <div
+                                            className="absolute inset-0 flex items-center justify-center backface-hidden"
+                                            style={{
+                                                backfaceVisibility: 'hidden',
+                                                transform: 'rotateY(180deg)',
+                                                width: '100%',
+                                                height: '100%',
+                                            }}
+                                        >
+                                            <div className="text-center">
+                                                <p className="text-xl text-gray-700 leading-relaxed">{card.back}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <p className="text-gray-500 mt-auto">Use ↑↓ arrows or click to flip</p>
-                        </div>
-
-                        {/* Back of card */}
-                        <div
-                            className="absolute inset-0 bg-white rounded-3xl shadow-xl flex items-center justify-center p-8 rotate-x-180 backface-hidden"
-                            style={{
-                                backfaceVisibility: 'hidden',
-                                transform: 'rotateX(180deg)'
-                            }}
-                        >
-                            <div className="text-center">
-                                <p className="text-xl text-gray-700 leading-relaxed">{currentCard?.back}</p>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })}
                 </div>
-
                 {/* Navigation Controls */}
                 <div className="flex items-center justify-center mt-8 space-x-8">
                     <button
@@ -1158,7 +1231,6 @@ const FlashcardApp = () => {
                     >
                         <ChevronLeft size={24} />
                     </button>
-
                     <button
                         onClick={() => triggerCardChange('next')}
                         className="p-3 rounded-full transition-all bg-white/20 text-white hover:bg-white/30"
@@ -1258,6 +1330,16 @@ const FlashcardApp = () => {
         @keyframes achievePopIn {
           0% { opacity: 0; transform: translateY(40px) scale(0.95) translateX(-50%); }
           100% { opacity: 1; transform: translateY(0) scale(1) translateX(-50%); }
+        }
+        .flip-180 {
+          transform: rotateY(180deg);
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        .ease-flip {
+          transition-timing-function: cubic-bezier(0.22,1,0.36,1);
         }
       `}</style>
         </div>
