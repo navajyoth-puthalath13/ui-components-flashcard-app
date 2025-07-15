@@ -94,4 +94,19 @@ Contributions, issues, and feature requests are welcome!
 - **v1.0.0**
   - Initial release
 
+## Version 2.0.0
+
+### New Features
+- Custom stacked carousel: See multiple cards at once, with smooth transitions and a modern stacked look.
+- Smooth flip animation for the center card (tap, click, or press Space to flip).
+- Mobile swipe: Easily swipe through cards, including skipping multiple cards with a single swipe.
+- Improved, Apple-style UX writing for instructions.
+
+### Version Numbering (Semantic Versioning)
+- **Major**: Breaking changes or big new features (e.g., 2.0.0)
+- **Minor**: Backwards-compatible feature additions (e.g., 2.1.0)
+- **Patch**: Bug fixes or small improvements (e.g., 2.0.1)
+
+This release is v2.0.0 because it introduces a major new user experience and feature set compared to v1.
+
 > _Made with ❤️ for the UI/UX community._

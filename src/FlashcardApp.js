@@ -1054,11 +1054,21 @@ const FlashcardApp = () => {
     // Custom stacked carousel rendering
     const getCardPosition = (idx) => {
         const total = currentCards.length;
+        // Responsive translateX values
+        let base = 90; // default for desktop
+        let far = 180;
+        if (typeof window !== 'undefined' && window.innerWidth < 640) { // mobile
+            base = 40;
+            far = 80;
+        } else if (typeof window !== 'undefined' && window.innerWidth < 1024) { // tablet
+            base = 60;
+            far = 120;
+        }
         if (idx === currentIndex) return { zIndex: 5, transform: 'translateX(0) scale(1)', opacity: 1 };
-        if (idx === (currentIndex - 1 + total) % total) return { zIndex: 4, transform: 'translateX(-90px) scale(0.92)', opacity: 1 };
-        if (idx === (currentIndex + 1) % total) return { zIndex: 4, transform: 'translateX(90px) scale(0.92)', opacity: 1 };
-        if (idx === (currentIndex - 2 + total) % total) return { zIndex: 3, transform: 'translateX(-180px) scale(0.85)', opacity: 1 };
-        if (idx === (currentIndex + 2) % total) return { zIndex: 3, transform: 'translateX(180px) scale(0.85)', opacity: 1 };
+        if (idx === (currentIndex - 1 + total) % total) return { zIndex: 4, transform: `translateX(-${base}px) scale(0.92)`, opacity: 1 };
+        if (idx === (currentIndex + 1) % total) return { zIndex: 4, transform: `translateX(${base}px) scale(0.92)`, opacity: 1 };
+        if (idx === (currentIndex - 2 + total) % total) return { zIndex: 3, transform: `translateX(-${far}px) scale(0.85)`, opacity: 1 };
+        if (idx === (currentIndex + 2) % total) return { zIndex: 3, transform: `translateX(${far}px) scale(0.85)`, opacity: 1 };
         // Hide all other cards
         return { zIndex: 1, transform: 'translateX(0) scale(0.8)', opacity: 0 };
     };
@@ -1153,9 +1163,7 @@ const FlashcardApp = () => {
                             position: 'absolute',
                             top: 0,
                             left: '50%',
-                            width: '320px',
-                            height: '384px',
-                            marginLeft: '-160px',
+                            width: '90vw', maxWidth: '340px', height: '60vw', maxHeight: '384px', marginLeft: 'calc(-45vw)',
                             transition: 'transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s cubic-bezier(0.22,1,0.36,1)',
                             ...getCardPosition(idx),
                             boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)',
