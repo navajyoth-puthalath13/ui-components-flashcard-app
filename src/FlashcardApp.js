@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -1054,11 +1054,18 @@ const FlashcardApp = () => {
     // Responsive card sizing
     const getCardDimensions = () => {
         const vw = window.innerWidth;
-        const isMobile = vw < 640;
-        let width = Math.min(vw * 0.9, 320);
-        width = Math.max(width, 240); // min width
-        let height = Math.max(Math.min(vw * 0.8, 480), 340); // increased height for mobile, min 340px
-        return { width, height, isMobile };
+        if (vw < 1024) {
+            // Mobile/tablet: tall card
+            let width = Math.min(vw * 0.9, 320);
+            width = Math.max(width, 240);
+            let height = Math.max(Math.min(vw * 0.9, 540), 380);
+            return { width, height, isMobile: true };
+        } else {
+            // Laptop/desktop: less tall card
+            let width = 320;
+            let height = 400;
+            return { width, height, isMobile: false };
+        }
     };
 
     // Responsive stacked carousel rendering
@@ -1121,6 +1128,24 @@ const FlashcardApp = () => {
         return () => window.removeEventListener('keydown', handleSpaceFlip);
     }, [handleFlip]);
 
+    const holdInterval = useRef(null);
+
+    const startHold = (direction) => {
+        if (holdInterval.current) return;
+        // Move immediately
+        triggerCardChange(direction);
+        // Then move repeatedly
+        holdInterval.current = setInterval(() => {
+            triggerCardChange(direction);
+        }, 350); // slower, more floating
+    };
+    const stopHold = () => {
+        if (holdInterval.current) {
+            clearInterval(holdInterval.current);
+            holdInterval.current = null;
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#6A9BCC' }}>
             {/* Category Selector */}
@@ -1171,7 +1196,7 @@ const FlashcardApp = () => {
                             width: `${width}px`,
                             height: `${height}px`,
                             marginLeft: `-${width / 2}px`,
-                            transition: 'transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s cubic-bezier(0.22,1,0.36,1)',
+                            transition: 'transform 1.2s cubic-bezier(0.19,1,0.22,1), opacity 1.2s cubic-bezier(0.19,1,0.22,1)',
                             ...getCardPosition(idx),
                             boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)',
                             background: 'white',
@@ -1242,12 +1267,22 @@ const FlashcardApp = () => {
                 <div className="flex items-center justify-center mt-8 space-x-8">
                     <button
                         onClick={() => triggerCardChange('prev')}
+                        onMouseDown={() => startHold('prev')}
+                        onMouseUp={stopHold}
+                        onMouseLeave={stopHold}
+                        onTouchStart={() => startHold('prev')}
+                        onTouchEnd={stopHold}
                         className="p-3 rounded-full transition-all bg-white/20 text-white hover:bg-white/30"
                     >
                         <ChevronLeft size={24} />
                     </button>
                     <button
                         onClick={() => triggerCardChange('next')}
+                        onMouseDown={() => startHold('next')}
+                        onMouseUp={stopHold}
+                        onMouseLeave={stopHold}
+                        onTouchStart={() => startHold('next')}
+                        onTouchEnd={stopHold}
                         className="p-3 rounded-full transition-all bg-white/20 text-white hover:bg-white/30"
                     >
                         <ChevronRight size={24} />
