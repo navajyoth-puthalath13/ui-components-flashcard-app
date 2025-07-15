@@ -1051,14 +1051,28 @@ const FlashcardApp = () => {
         return '';
     };
 
-    // Custom stacked carousel rendering
+    // Responsive card sizing
+    const getCardDimensions = () => {
+        const vw = window.innerWidth;
+        const isMobile = vw < 640;
+        let width = Math.min(vw * 0.9, 320);
+        width = Math.max(width, 240); // min width
+        let height = Math.max(Math.min(vw * 0.8, 480), 340); // increased height for mobile, min 340px
+        return { width, height, isMobile };
+    };
+
+    // Responsive stacked carousel rendering
     const getCardPosition = (idx) => {
         const total = currentCards.length;
+        const { isMobile, width } = getCardDimensions();
+        // Stacking distances: 40% and 80% of card width, but clamp so side cards are always visible
+        const d1 = Math.max(width * 0.4, 60);
+        const d2 = Math.max(width * 0.8, 120);
         if (idx === currentIndex) return { zIndex: 5, transform: 'translateX(0) scale(1)', opacity: 1 };
-        if (idx === (currentIndex - 1 + total) % total) return { zIndex: 4, transform: 'translateX(-90px) scale(0.92)', opacity: 1 };
-        if (idx === (currentIndex + 1) % total) return { zIndex: 4, transform: 'translateX(90px) scale(0.92)', opacity: 1 };
-        if (idx === (currentIndex - 2 + total) % total) return { zIndex: 3, transform: 'translateX(-180px) scale(0.85)', opacity: 1 };
-        if (idx === (currentIndex + 2) % total) return { zIndex: 3, transform: 'translateX(180px) scale(0.85)', opacity: 1 };
+        if (idx === (currentIndex - 1 + total) % total) return { zIndex: 4, transform: `translateX(-${d1}px) scale(0.92)`, opacity: 1 };
+        if (idx === (currentIndex + 1) % total) return { zIndex: 4, transform: `translateX(${d1}px) scale(0.92)`, opacity: 1 };
+        if (idx === (currentIndex - 2 + total) % total) return { zIndex: 3, transform: `translateX(-${d2}px) scale(0.85)`, opacity: 1 };
+        if (idx === (currentIndex + 2) % total) return { zIndex: 3, transform: `translateX(${d2}px) scale(0.85)`, opacity: 1 };
         // Hide all other cards
         return { zIndex: 1, transform: 'translateX(0) scale(0.8)', opacity: 0 };
     };
@@ -1146,16 +1160,17 @@ const FlashcardApp = () => {
 
             {/* Main Flashcard Custom Carousel */}
             <div className="w-full max-w-2xl px-4 md:px-8 mt-16 md:mt-0">
-                <div className="relative w-full h-96 max-h-[80vh] flex items-center justify-center mx-auto" style={{ perspective: '1200px' }}>
+                <div className="relative w-full h-96 max-h-[80vh] flex items-center justify-center mx-auto px-2" style={{ perspective: '1200px' }}>
                     {currentCards.map((card, idx) => {
                         const isCenter = idx === currentIndex;
+                        const { width, height } = getCardDimensions();
                         const style = {
                             position: 'absolute',
                             top: 0,
                             left: '50%',
-                            width: '320px',
-                            height: '384px',
-                            marginLeft: '-160px',
+                            width: `${width}px`,
+                            height: `${height}px`,
+                            marginLeft: `-${width / 2}px`,
                             transition: 'transform 0.7s cubic-bezier(0.22,1,0.36,1), opacity 0.7s cubic-bezier(0.22,1,0.36,1)',
                             ...getCardPosition(idx),
                             boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)',
